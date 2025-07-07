@@ -1,660 +1,221 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
   FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  SafeAreaView,
   RefreshControl,
-  Dimensions,
+  Image, // Görsel zenginlik için eklendi
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { useESIMStore } from "../../stores/esimStore"; // Doğru yolu kontrol edin
+import { COLORS, FONTS, SIZES } from "../../constants/theme"; // Doğru yolu kontrol edin
 
-import Header from "../../components/common/Header";
-import Card from "../../components/common/Card";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { esimService } from "../../services/api/esimService";
-import { colors } from "../../constants/colors";
-import { fonts } from "../../constants/fonts";
-import { sizes } from "../../constants/sizes";
-
-const { width } = Dimensions.get("window");
-
-const StoreScreen = ({ navigation }) => {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [countries, setCountries] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [filteredPackages, setFilteredPackages] = useState([]);
-  const [popularPackages, setPopularPackages] = useState([]);
-
-  const categories = [
-    { id: "all", name: "Tümü", icon: "globe-outline" },
-    { id: "popular", name: "Popüler", icon: "star-outline" },
-    { id: "regional", name: "Bölgesel", icon: "location-outline" },
-    { id: "global", name: "Global", icon: "earth-outline" },
-  ];
-
-  useEffect(() => {
-    loadStoreData();
-  }, []);
-
-  useEffect(() => {
-    filterPackages();
-  }, [searchQuery, selectedCategory, packages]);
-
-  const loadStoreData = async () => {
-    try {
-      setLoading(true);
-
-      const [countriesResponse, packagesResponse, popularResponse] =
-        await Promise.all([
-          esimService.getCountries(),
-          esimService.getPackages(),
-          esimService.getPopularPackages(),
-        ]);
-
-      if (countriesResponse.success) {
-        setCountries(countriesResponse.data);
-      }
-
-      if (packagesResponse.success) {
-        setPackages(packagesResponse.data);
-      }
-
-      if (popularResponse.success) {
-        setPopularPackages(popularResponse.data);
-      }
-    } catch (error) {
-      console.error("Store data loading error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadStoreData();
-    setRefreshing(false);
-  };
-
-  const filterPackages = () => {
-    let filtered = packages;
-
-    // Category filter
-    if (selectedCategory === "popular") {
-      filtered = popularPackages;
-    } else if (selectedCategory === "regional") {
-      filtered = packages.filter((pkg) => pkg.type === "regional");
-    } else if (selectedCategory === "global") {
-      filtered = packages.filter((pkg) => pkg.type === "global");
-    }
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (pkg) =>
-          pkg.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          pkg.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    setFilteredPackages(filtered);
-  };
-
-  const formatDataAmount = (mb) => {
-    if (mb < 1024) return `${mb} MB`;
-    return `${(mb / 1024).toFixed(1)} GB`;
-  };
-
-  const formatDuration = (days) => {
-    if (days < 30) return `${days} Gün`;
-    return `${Math.round(days / 30)} Ay`;
-  };
-
-  const CategoryButton = ({ category }) => (
-    <TouchableOpacity
-      style={[
-        styles.categoryButton,
-        selectedCategory === category.id && styles.categoryButtonActive,
-      ]}
-      onPress={() => setSelectedCategory(category.id)}
-    >
-      <Ionicons
-        name={category.icon}
-        size={sizes.icon.sm}
-        color={
-          selectedCategory === category.id ? colors.text : colors.textMuted
-        }
-      />
-      <Text
-        style={[
-          styles.categoryText,
-          selectedCategory === category.id && styles.categoryTextActive,
-        ]}
-      >
-        {category.name}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const PackageCard = ({ package: pkg }) => (
-    <Card
-      style={styles.packageCard}
-      onPress={() => navigation.navigate("Purchase", { packageId: pkg.id })}
-    >
-      <View style={styles.packageHeader}>
-        <View style={styles.countryInfo}>
-          <Text style={styles.countryFlag}>{pkg.countryFlag}</Text>
-          <View style={styles.countryDetails}>
-            <Text style={styles.countryName}>{pkg.country}</Text>
-            {pkg.coverage && (
-              <Text style={styles.coverage}>{pkg.coverage}</Text>
-            )}
-          </View>
-        </View>
-
-        {pkg.isPopular && (
-          <View style={styles.popularBadge}>
-            <LinearGradient
-              colors={colors.gradient.accent}
-              style={styles.popularBadgeGradient}
-            >
-              <Ionicons name="star" size={12} color={colors.text} />
-              <Text style={styles.popularText}>Popüler</Text>
-            </LinearGradient>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.packageDetails}>
-        <View style={styles.packageFeature}>
-          <Ionicons name="wifi" size={sizes.icon.sm} color={colors.primary} />
-          <Text style={styles.featureText}>
-            {formatDataAmount(pkg.dataAmount)}
-          </Text>
-        </View>
-
-        <View style={styles.packageFeature}>
-          <Ionicons name="time" size={sizes.icon.sm} color={colors.primary} />
-          <Text style={styles.featureText}>{formatDuration(pkg.duration)}</Text>
-        </View>
-
-        <View style={styles.packageFeature}>
-          <Ionicons name="flash" size={sizes.icon.sm} color={colors.primary} />
-          <Text style={styles.featureText}>{pkg.speed || "4G/5G"}</Text>
-        </View>
-      </View>
-
-      <View style={styles.packageFooter}>
-        <View style={styles.priceInfo}>
-          <Text style={styles.price}>${pkg.price}</Text>
-          {pkg.originalPrice && pkg.originalPrice > pkg.price && (
-            <Text style={styles.originalPrice}>${pkg.originalPrice}</Text>
-          )}
-        </View>
-
-        <TouchableOpacity
-          style={styles.buyButton}
-          onPress={() => navigation.navigate("Purchase", { packageId: pkg.id })}
-        >
-          <LinearGradient
-            colors={colors.gradient.primary}
-            style={styles.buyButtonGradient}
-          >
-            <Text style={styles.buyButtonText}>Satın Al</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-    </Card>
-  );
-
-  const CountryCard = ({ country }) => (
-    <TouchableOpacity
-      style={styles.countryCard}
-      onPress={() =>
-        navigation.navigate("CountryPackages", { countryId: country.id })
-      }
-    >
-      <Text style={styles.countryCardFlag}>{country.flag}</Text>
-      <Text style={styles.countryCardName}>{country.name}</Text>
-      <Text style={styles.countryCardPackages}>
-        {country.packageCount} Paket
-      </Text>
-    </TouchableOpacity>
-  );
-
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Mağaza yükleniyor..." />;
-  }
+/**
+ * Yeniden kullanılabilir, şık ve bilgilendirici eSIM paket kartı bileşeni.
+ */
+const PackageCard = React.memo(({ item, onPress }) => {
+  // API'den gelen veriye göre esnek olalım.
+  const countryName = item.countries?.[0]?.name || "Global";
+  const dataAmount = item.packages?.[0]?.data || "N/A";
+  const validityDays = item.packages?.[0]?.day || "N/A";
+  const price = item.packages?.[0]?.price || 0;
+  const flagUrl = item.countries?.[0]?.image;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header
-        title="eSIM Mağaza"
-        rightIcon={
-          <Ionicons
-            name="filter-outline"
-            size={sizes.icon.md}
-            color={colors.text}
-          />
-        }
-        onRightPress={() => navigation.navigate("Filters")}
-      />
+    <TouchableOpacity style={styles.card} onPress={() => onPress(item)}>
+      <View style={styles.cardHeader}>
+        {flagUrl && <Image source={{ uri: flagUrl }} style={styles.flag} />}
+        <Text style={styles.countryText}>{countryName}</Text>
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.dataText}>{dataAmount}</Text>
+        <Text style={styles.validityText}>/ {validityDays} Gün</Text>
+      </View>
+      <View style={styles.cardFooter}>
+        <Text style={styles.priceText}>${price.toFixed(2)}</Text>
+        <View style={styles.buyButton}>
+          <Text style={styles.buyButtonText}>Detaylar</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
-      <ScrollView
-        style={styles.scrollView}
+const StoreScreen = ({ navigation }) => {
+  // Zustand store'dan gerekli state'leri ve action'ları alıyoruz.
+  const { packages, isLoadingPackages, error, fetchPackages } = useESIMStore(
+    (state) => ({
+      packages: state.packages,
+      isLoadingPackages: state.isLoadingPackages,
+      error: state.error,
+      fetchPackages: state.fetchPackages,
+    })
+  );
+
+  useEffect(() => {
+    // Component ilk yüklendiğinde paketleri çekiyoruz.
+    fetchPackages();
+  }, [fetchPackages]);
+
+  // Kullanıcının listeyi aşağı çekerek yenilemesini sağlayan fonksiyon.
+  const onRefresh = useCallback(() => {
+    fetchPackages();
+  }, [fetchPackages]);
+
+  // Kullanıcı bir pakete tıkladığında çalışacak fonksiyon.
+  const handlePackageSelect = (selectedPackage) => {
+    navigation.navigate("PurchaseSummary", { packageDetails: selectedPackage });
+  };
+
+  // Yüklenme durumunda gösterilecek UI.
+  if (isLoadingPackages && !packages.length) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Paketler Yükleniyor...</Text>
+      </View>
+    );
+  }
+
+  // Hata durumunda gösterilecek UI.
+  if (error) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.errorText}>Bir Hata Oluştu</Text>
+        <Text style={styles.errorSubText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Başarılı durumda listeyi gösteren UI.
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>eSIM Mağazası</Text>
+        <Text style={styles.headerSubtitle}>
+          Dünyayı Keşfet, Bağlantıda Kal
+        </Text>
+      </View>
+      <FlatList
+        data={packages}
+        renderItem={({ item }) => (
+          <PackageCard item={item} onPress={handlePackageSelect} />
+        )}
+        keyExtractor={(item) =>
+          item.id?.toString() || `fallback-${Math.random()}`
+        }
+        contentContainerStyle={{
+          paddingHorizontal: SIZES.padding,
+          paddingBottom: 20,
+        }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isLoadingPackages}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+            tintColor={COLORS.primary}
           />
         }
-      >
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons
-              name="search-outline"
-              size={sizes.icon.sm}
-              color={colors.textMuted}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Ülke veya paket ara..."
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+        ListEmptyComponent={() => (
+          <View style={styles.center}>
+            <Text style={styles.errorText}>Gösterilecek paket bulunamadı.</Text>
           </View>
-        </View>
-
-        {/* Categories */}
-        <View style={styles.categoriesContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categories}
-          >
-            {categories.map((category) => (
-              <CategoryButton key={category.id} category={category} />
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Featured Banner */}
-        <Card
-          gradient
-          gradientColors={colors.gradient.primary}
-          style={styles.featuredBanner}
-          onPress={() => navigation.navigate("FeaturedPackages")}
-        >
-          <View style={styles.bannerContent}>
-            <View style={styles.bannerText}>
-              <Text style={styles.bannerTitle}>Özel Fırsat!</Text>
-              <Text style={styles.bannerDescription}>
-                Seçili ülkelerde %30 indirim
-              </Text>
-            </View>
-            <Ionicons
-              name="airplane"
-              size={sizes.icon.lg}
-              color={colors.text}
-            />
-          </View>
-        </Card>
-
-        {/* Popular Countries */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Popüler Ülkeler</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("AllCountries")}
-            >
-              <Text style={styles.seeAllText}>Tümünü Gör</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.countriesContainer}
-          >
-            {countries.slice(0, 8).map((country) => (
-              <CountryCard key={country.id} country={country} />
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Packages */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {selectedCategory === "all"
-              ? "Tüm Paketler"
-              : selectedCategory === "popular"
-              ? "Popüler Paketler"
-              : selectedCategory === "regional"
-              ? "Bölgesel Paketler"
-              : "Global Paketler"}
-          </Text>
-
-          {filteredPackages.length > 0 ? (
-            filteredPackages.map((pkg) => (
-              <PackageCard key={pkg.id} package={pkg} />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons
-                name="search-outline"
-                size={sizes.icon.xxl}
-                color={colors.textMuted}
-              />
-              <Text style={styles.emptyTitle}>Paket bulunamadı</Text>
-              <Text style={styles.emptyDescription}>
-                Arama kriterlerinizi değiştirip tekrar deneyin
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+        )}
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  scrollView: {
-    flex: 1,
-  },
-
-  searchContainer: {
-    padding: sizes.padding.md,
-  },
-
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: sizes.radius.md,
-    paddingHorizontal: sizes.padding.md,
-    height: sizes.input.height,
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: sizes.margin.sm,
-    fontSize: fonts.size.md,
-    fontFamily: fonts.family.regular,
-    color: colors.text,
-  },
-
-  categoriesContainer: {
-    marginBottom: sizes.margin.md,
-  },
-
-  categories: {
-    paddingHorizontal: sizes.padding.md,
-  },
-
-  categoryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: sizes.padding.md,
-    paddingVertical: sizes.padding.sm,
-    marginRight: sizes.margin.sm,
-    borderRadius: sizes.radius.md,
-    backgroundColor: colors.surface,
-  },
-
-  categoryButtonActive: {
-    backgroundColor: colors.primary,
-  },
-
-  categoryText: {
-    marginLeft: sizes.margin.xs,
-    fontSize: fonts.size.sm,
-    fontFamily: fonts.family.medium,
-    color: colors.textMuted,
-  },
-
-  categoryTextActive: {
-    color: colors.text,
-  },
-
-  featuredBanner: {
-    margin: sizes.margin.md,
-    marginTop: 0,
-  },
-
-  bannerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  bannerText: {
-    flex: 1,
-  },
-
-  bannerTitle: {
-    fontSize: fonts.size.lg,
-    fontFamily: fonts.family.bold,
-    color: colors.text,
-    marginBottom: 4,
-  },
-
-  bannerDescription: {
-    fontSize: fonts.size.md,
-    fontFamily: fonts.family.regular,
-    color: colors.text,
-    opacity: 0.9,
-  },
-
-  section: {
-    padding: sizes.padding.md,
-    paddingTop: 0,
-  },
-
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: sizes.margin.md,
-  },
-
-  sectionTitle: {
-    fontSize: fonts.size.lg,
-    fontFamily: fonts.family.semiBold,
-    color: colors.text,
-  },
-
-  seeAllText: {
-    fontSize: fonts.size.sm,
-    fontFamily: fonts.family.medium,
-    color: colors.primary,
-  },
-
-  countriesContainer: {
-    paddingVertical: sizes.padding.sm,
-  },
-
-  countryCard: {
-    alignItems: "center",
-    marginRight: sizes.margin.md,
-    padding: sizes.padding.sm,
-    backgroundColor: colors.surface,
-    borderRadius: sizes.radius.md,
-    width: 80,
-  },
-
-  countryCardFlag: {
-    fontSize: 32,
-    marginBottom: sizes.margin.xs,
-  },
-
-  countryCardName: {
-    fontSize: fonts.size.xs,
-    fontFamily: fonts.family.medium,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: 2,
-  },
-
-  countryCardPackages: {
-    fontSize: fonts.size.xs,
-    fontFamily: fonts.family.regular,
-    color: colors.textMuted,
-  },
-
-  packageCard: {
-    marginBottom: sizes.margin.md,
-  },
-
-  packageHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: sizes.margin.md,
-  },
-
-  countryInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-
-  countryFlag: {
-    fontSize: 32,
-    marginRight: sizes.margin.sm,
-  },
-
-  countryDetails: {
-    flex: 1,
-  },
-
-  countryName: {
-    fontSize: fonts.size.md,
-    fontFamily: fonts.family.semiBold,
-    color: colors.text,
-  },
-
-  coverage: {
-    fontSize: fonts.size.sm,
-    fontFamily: fonts.family.regular,
-    color: colors.textSecondary,
-  },
-
-  popularBadge: {
-    borderRadius: sizes.radius.sm,
-    overflow: "hidden",
-  },
-
-  popularBadgeGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: sizes.padding.sm,
-    paddingVertical: 4,
-  },
-
-  popularText: {
-    marginLeft: 4,
-    fontSize: fonts.size.xs,
-    fontFamily: fonts.family.medium,
-    color: colors.text,
-  },
-
-  packageDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: sizes.margin.md,
-  },
-
-  packageFeature: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-
-  featureText: {
-    marginLeft: sizes.margin.xs,
-    fontSize: fonts.size.sm,
-    fontFamily: fonts.family.medium,
-    color: colors.text,
-  },
-
-  packageFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  priceInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  price: {
-    fontSize: fonts.size.lg,
-    fontFamily: fonts.family.bold,
-    color: colors.primary,
-  },
-
-  originalPrice: {
-    marginLeft: sizes.margin.sm,
-    fontSize: fonts.size.md,
-    fontFamily: fonts.family.regular,
-    color: colors.textMuted,
-    textDecorationLine: "line-through",
-  },
-
-  buyButton: {
-    borderRadius: sizes.radius.md,
-    overflow: "hidden",
-  },
-
-  buyButtonGradient: {
-    paddingHorizontal: sizes.padding.lg,
-    paddingVertical: sizes.padding.sm,
-  },
-
-  buyButtonText: {
-    fontSize: fonts.size.sm,
-    fontFamily: fonts.family.medium,
-    color: colors.text,
-  },
-
-  emptyState: {
-    alignItems: "center",
     justifyContent: "center",
-    paddingVertical: sizes.padding.xxl,
+    alignItems: "center",
+    padding: SIZES.padding,
   },
-
-  emptyTitle: {
-    fontSize: fonts.size.lg,
-    fontFamily: fonts.family.semiBold,
-    color: colors.text,
-    marginTop: sizes.margin.md,
-    marginBottom: sizes.margin.sm,
+  loadingText: {
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.base * 2,
   },
-
-  emptyDescription: {
-    fontSize: fonts.size.md,
-    fontFamily: fonts.family.regular,
-    color: colors.textSecondary,
+  errorText: { ...FONTS.h2, color: COLORS.error, textAlign: "center" },
+  errorSubText: {
+    ...FONTS.body4,
+    color: COLORS.textSecondary,
     textAlign: "center",
+    marginTop: SIZES.base,
   },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.base,
+    paddingHorizontal: SIZES.padding,
+    borderRadius: SIZES.radius,
+    marginTop: SIZES.padding,
+  },
+  retryButtonText: { ...FONTS.h4, color: COLORS.white, fontWeight: "bold" },
+  header: {
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.padding / 2,
+  },
+  headerTitle: { ...FONTS.h1, color: COLORS.text, fontWeight: "bold" },
+  headerSubtitle: {
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.base / 2,
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius * 1.5,
+    padding: SIZES.base * 2,
+    marginBottom: SIZES.base * 2,
+    elevation: 4,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.surface,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SIZES.base,
+  },
+  flag: { width: 30, height: 20, borderRadius: 4, marginRight: SIZES.base },
+  countryText: { ...FONTS.h3, color: COLORS.text, fontWeight: "600" },
+  cardBody: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginVertical: SIZES.padding,
+  },
+  dataText: { ...FONTS.h1, color: COLORS.primary, fontWeight: "800" },
+  validityText: {
+    ...FONTS.body4,
+    color: COLORS.textSecondary,
+    marginLeft: SIZES.base,
+    marginBottom: SIZES.base,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: SIZES.base,
+  },
+  priceText: { ...FONTS.h2, color: COLORS.text, fontWeight: "700" },
+  buyButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.base * 1.5,
+    paddingHorizontal: SIZES.padding,
+    borderRadius: SIZES.radius * 2,
+  },
+  buyButtonText: { ...FONTS.h4, color: COLORS.white, fontWeight: "bold" },
 });
 
 export default StoreScreen;

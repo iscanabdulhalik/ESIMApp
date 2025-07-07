@@ -1,211 +1,87 @@
-import React, { useEffect } from "react";
-import { StatusBar } from "expo-status-bar";
+import "react-native-gesture-handler"; // En üstte olmalı
+import React from "react";
+import { StatusBar } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as SplashScreen from "expo-splash-screen";
-import { useFonts } from "expo-font";
+import { COLORS } from "./src/constants/theme"; // Yolu doğrulayın
 
-// Context
-import { AuthProvider, useAuth } from "./src/context/AuthContext";
-
-// Screens
-import LoginScreen from "./src/screens/auth/LoginScreen";
-import RegisterScreen from "./src/screens/auth/RegisterScreen";
-import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
-import HomeScreen from "./src/screens/home/HomeScreen";
+// --- Ekranlarımızı import ediyoruz ---
+// Not: Bu ekranların projenizde doğru yollarda var olduğunu varsayıyoruz.
 import StoreScreen from "./src/screens/store/StoreScreen";
-import PurchaseScreen from "./src/screens/store/PurchaseScreen";
-import MyESIMsScreen from "./src/screens/esims/ESIMsScreens";
+import PurchaseSummaryScreen from "./src/screens/purchase/PurchaseSummaryScreen";
+import ESIMDetailsScreen from "./src/screens/esims/ESIMDetailsScreen";
 
-// Components
-import LoadingSpinner from "./src/components/common/LoadingSpinner";
-
-// Constants
-import { colors } from "./src/constants/colors";
-import { fonts } from "./src/constants/fonts";
-
-// Keep splash screen visible while loading
-SplashScreen.preventAutoHideAsync();
+// --- Gelecekteki Ekranlar İçin Yer Tutucular ---
+// Bu ekranları daha sonra oluşturduğunuzda importları açabilirsiniz.
+// import MyESIMsScreen from './src/screens/esims/MyESIMsScreen';
+// import ProfileScreen from './src/screens/profile/ProfileScreen';
 
 const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
 
-// Auth Stack Navigator
-function AuthStack() {
+/**
+ * Uygulamanın ana akışını yöneten Stack Navigator.
+ * Bu yapı, gelecekte bir Tab Navigator ile kolayca entegre edilebilir.
+ */
+const AppStack = () => {
   return (
     <Stack.Navigator
+      initialRouteName="Store" // Uygulama açıldığında ilk gösterilecek ekran
       screenOptions={{
-        headerShown: false,
-        cardStyle: { backgroundColor: colors.background },
+        headerShown: false, // Her ekranda özel başlık kullanacağımız için global başlığı kapatıyoruz.
+        cardStyle: { backgroundColor: COLORS.background }, // Tüm ekranlar için varsayılan arka plan rengi.
+        // --- Sayfa Geçiş Animasyonu ---
+        ...Platform.select({
+          ios: {
+            ...TransitionPresets.SlideFromRightIOS,
+          },
+          android: {
+            ...TransitionPresets.FadeFromBottomAndroid,
+          },
+        }),
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-    </Stack.Navigator>
-  );
-}
-
-// Store Stack Navigator
-function StoreStack() {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        cardStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="StoreMain" component={StoreScreen} />
-      <Stack.Screen name="Purchase" component={PurchaseScreen} />
-    </Stack.Navigator>
-  );
-}
-
-// eSIMs Stack Navigator
-function ESIMsStack() {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        cardStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="MyESIMsMain" component={MyESIMsScreen} />
-    </Stack.Navigator>
-  );
-}
-
-// Profile Stack Navigator (Placeholder)
-function ProfileStack() {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        cardStyle: { backgroundColor: colors.background },
-      }}
-    >
+      {/* 
+        Gelecekte buraya bir Tab Navigator ekleyebilirsiniz:
+        <Stack.Screen name="Main" component={MainTabNavigator} /> 
+      */}
       <Stack.Screen
-        name="ProfileMain"
-        component={() => (
-          <LoadingSpinner fullScreen text="Profil ekranı yakında..." />
-        )}
+        name="Store"
+        component={StoreScreen}
+        options={{ title: "Mağaza" }}
+      />
+      <Stack.Screen
+        name="PurchaseSummary"
+        component={PurchaseSummaryScreen}
+        options={{
+          headerShown: true, // Bu ekranda varsayılan başlığı gösterebiliriz
+          headerBackTitle: "Geri",
+          headerTitle: "Sipariş Özeti",
+          headerStyle: { backgroundColor: COLORS.surface },
+          headerTintColor: COLORS.text,
+        }}
+      />
+      <Stack.Screen
+        name="ESIMDetails"
+        component={ESIMDetailsScreen}
+        options={{
+          title: "eSIM Detayları",
+          // Bu ekrandan geri gidilmesini istemeyebiliriz.
+          // gestureEnabled: false,
+        }}
       />
     </Stack.Navigator>
   );
-}
+};
 
-// Main Tab Navigator
-function MainTabs() {
+const App = () => {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-
-          if (route.name === "Home") {
-            iconName = focused ? "home" : "home-outline";
-          } else if (route.name === "Store") {
-            iconName = focused ? "storefront" : "storefront-outline";
-          } else if (route.name === "MyESIMs") {
-            iconName = focused ? "phone-portrait" : "phone-portrait-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline";
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: fonts.size.xs,
-          fontFamily: fonts.family.medium,
-        },
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: "Ana Sayfa" }}
-      />
-      <Tab.Screen
-        name="Store"
-        component={StoreStack}
-        options={{ tabBarLabel: "Mağaza" }}
-      />
-      <Tab.Screen
-        name="MyESIMs"
-        component={ESIMsStack}
-        options={{ tabBarLabel: "eSIM'lerim" }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileStack}
-        options={{ tabBarLabel: "Profil" }}
-      />
-    </Tab.Navigator>
-  );
-}
-
-// App Navigator
-function AppNavigator() {
-  const { user, loading, isAuthenticated } = useAuth();
-
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Yükleniyor..." />;
-  }
-
-  return (
+    // NavigationContainer, tüm navigasyon yapısını sarmalar.
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: colors.background },
-        }}
-      >
-        {isAuthenticated ? (
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-        ) : (
-          <Stack.Screen name="Auth" component={AuthStack} />
-        )}
-      </Stack.Navigator>
+      {/* Koyu tema için status bar stilini ayarlıyoruz. */}
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+      <AppStack />
     </NavigationContainer>
   );
-}
+};
 
-export default function App() {
-  const [fontsLoaded] = useFonts({
-    // Burada custom fontlar yüklenebilir
-    // Şimdilik sistem fontlarını kullanıyoruz
-  });
-
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
-
-  return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="light" backgroundColor={colors.background} />
-        <AppNavigator />
-      </AuthProvider>
-    </SafeAreaProvider>
-  );
-}
+export default App;
