@@ -1,29 +1,39 @@
 {
   "expo": {
-    "name": "ESIMApp",
-    "slug": "ESIMApp",
+    "name": "DataGo eSIM",
+    "slug": "datago-esim",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0F172A"
     },
-    "ios": {
-      "supportsTablet": true
-    },
+    "assetBundlePatterns": ["**/*"],
+    "platforms": ["ios", "android"],
+    "plugins": [
+      "@stripe/stripe-react-native",
+      "expo-barcode-scanner",
+      "expo-notifications",
+      "expo-camera"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0F172A"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": ["CAMERA", "VIBRATE", "RECEIVE_BOOT_COMPLETED"]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.datago.esim"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
     }
   }
 }

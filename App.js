@@ -1,20 +1,43 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import { StripeProvider } from "@stripe/stripe-react-native";
+
+import MainNavigator from "./src/navigation/MainNavigator";
+import { AuthProvider } from "./src/context/AuthContext";
+import { colors } from "./src/constants/colors";
+
+// Splash screen'i hazır tutma
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    "Inter-Regular": require("./assets/fonts/Inter-Regular.ttf"),
+    "Inter-Medium": require("./assets/fonts/Inter-Medium.ttf"),
+    "Inter-SemiBold": require("./assets/fonts/Inter-SemiBold.ttf"),
+    "Inter-Bold": require("./assets/fonts/Inter-Bold.ttf"),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <StripeProvider publishableKey="pk_test_your_stripe_key">
+      <AuthProvider>
+        <NavigationContainer>
+          <StatusBar style="light" backgroundColor={colors.background} />
+          <MainNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </StripeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
