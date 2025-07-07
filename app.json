@@ -12,19 +12,17 @@
       "backgroundColor": "#0F172A"
     },
     "assetBundlePatterns": ["**/*"],
-    "platforms": ["ios", "android"],
-    "plugins": [
-      "@stripe/stripe-react-native",
-      "expo-barcode-scanner",
-      "expo-notifications",
-      "expo-camera"
-    ],
+    "platforms": ["ios", "android", "web"],
+    "web": {
+      "bundler": "metro"
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F172A"
       },
-      "permissions": ["CAMERA", "VIBRATE", "RECEIVE_BOOT_COMPLETED"]
+      "permissions": ["CAMERA", "VIBRATE", "RECEIVE_BOOT_COMPLETED"],
+      "package": "com.datago.esim"
     },
     "ios": {
       "supportsTablet": true,

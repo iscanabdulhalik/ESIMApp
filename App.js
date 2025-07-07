@@ -1,43 +1,61 @@
-import React, { useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { StatusBar } from "expo-status-bar";
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
-import { StripeProvider } from "@stripe/stripe-react-native";
-
-import MainNavigator from "./src/navigation/MainNavigator";
-import { AuthProvider } from "./src/context/AuthContext";
-import { colors } from "./src/constants/colors";
-
-// Splash screen'i hazır tutma
-SplashScreen.preventAutoHideAsync();
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    "Inter-Regular": require("./assets/fonts/Inter-Regular.ttf"),
-    "Inter-Medium": require("./assets/fonts/Inter-Medium.ttf"),
-    "Inter-SemiBold": require("./assets/fonts/Inter-SemiBold.ttf"),
-    "Inter-Bold": require("./assets/fonts/Inter-Bold.ttf"),
-  });
-
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
+  const [count, setCount] = React.useState(0);
 
   return (
-    <StripeProvider publishableKey="pk_test_your_stripe_key">
-      <AuthProvider>
-        <NavigationContainer>
-          <StatusBar style="light" backgroundColor={colors.background} />
-          <MainNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-    </StripeProvider>
+    <View style={styles.container}>
+      <Text style={styles.title}>DataGo eSIM</Text>
+      <Text style={styles.subtitle}>Uygulama Başarıyla Çalışıyor! 🎉</Text>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => setCount(count + 1)}
+      >
+        <Text style={styles.buttonText}>Tıkla: {count}</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.info}>React Native + Expo</Text>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0F172A",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#F8FAFC",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 18,
+    color: "#10B981",
+    marginBottom: 40,
+    textAlign: "center",
+  },
+  button: {
+    backgroundColor: "#1E3A8A",
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  info: {
+    color: "#64748B",
+    fontSize: 14,
+  },
+});
