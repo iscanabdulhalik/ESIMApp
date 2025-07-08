@@ -1,140 +1,52 @@
-import { get, post } from "./api/apiClient";
-import { API_CONFIG } from "../constants/api";
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 
+/**
+ * Firebase Auth ve Firestore kullanarak kimlik doğrulama işlemlerini yönetir.
+ */
 export const authService = {
-  // Kullanıcı girişi
-  login: async (email, password) => {
-    const response = await post(API_CONFIG.ENDPOINTS.AUTH.LOGIN, {
+  /**
+   * Yeni bir kullanıcı kaydı oluşturur ve Firestore'da bir profil dokümanı açar.
+   */
+  register: async (name, email, password) => {
+    const userCredential = await auth().createUserWithEmailAndPassword(
       email,
-      password,
-    });
-
-    return response;
-  },
-
-  // Kullanıcı kaydı
-  register: async (userData) => {
-    const { firstName, lastName, email, password, phone, country } = userData;
-
-    const response = await post(API_CONFIG.ENDPOINTS.AUTH.REGISTER, {
-      firstName,
-      lastName,
-      email,
-      password,
-      phone,
-      country,
-    });
-
-    return response;
-  },
-
-  // Şifre sıfırlama isteği
-  forgotPassword: async (email) => {
-    const response = await post("/auth/forgot-password", {
-      email,
-    });
-
-    return response;
-  },
-
-  // Şifre sıfırlama doğrulama
-  resetPassword: async (token, newPassword) => {
-    const response = await post("/auth/reset-password", {
-      token,
-      password: newPassword,
-    });
-
-    return response;
-  },
-
-  // Token yenileme
-  refreshToken: async (refreshToken) => {
-    const response = await post(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {
-      refreshToken,
-    });
-
-    return response;
-  },
-
-  // Çıkış yapma
-  logout: async () => {
-    const response = await post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT);
-    return response;
-  },
-
-  // Email doğrulama
-  verifyEmail: async (token) => {
-    const response = await post("/auth/verify-email", {
-      token,
-    });
-
-    return response;
-  },
-
-  // Email doğrulama kodu gönderme
-  resendVerification: async (email) => {
-    const response = await post("/auth/resend-verification", {
-      email,
-    });
-
-    return response;
-  },
-
-  // Profil bilgilerini getir
-  getProfile: async () => {
-    const response = await get(API_CONFIG.ENDPOINTS.PROFILE);
-    return response;
-  },
-
-  // Profil güncelle
-  updateProfile: async (profileData) => {
-    const response = await post(
-      API_CONFIG.ENDPOINTS.UPDATE_PROFILE,
-      profileData
+      password
     );
-    return response;
-  },
+    const { uid } = userCredential.user;
 
-  // Şifre değiştirme
-  changePassword: async (currentPassword, newPassword) => {
-    const response = await post("/auth/change-password", {
-      currentPassword,
-      newPassword,
+    // Firestore'da kullanıcıya özel bir doküman oluştur
+    await firestore().collection("users").doc(uid).set({
+      name,
+      email,
+      createdAt: firestore.FieldValue.serverTimestamp(),
     });
 
-    return response;
+    return userCredential.user;
   },
 
-  // Hesap silme
-  deleteAccount: async (password) => {
-    const response = await post("/auth/delete-account", {
-      password,
-    });
-
-    return response;
+  /**
+   * Kullanıcının giriş yapmasını sağlar.
+   */
+  login: async (email, password) => {
+    const userCredential = await auth().signInWithEmailAndPassword(
+      email,
+      password
+    );
+    return userCredential.user;
   },
 
-  // Two-factor authentication etkinleştirme
-  enableTwoFactor: async () => {
-    const response = await post("/auth/enable-2fa");
-    return response;
+  /**
+   * Kullanıcının oturumunu kapatır.
+   */
+  logout: async () => {
+    await auth().signOut();
   },
 
-  // Two-factor authentication devre dışı bırakma
-  disableTwoFactor: async (code) => {
-    const response = await post("/auth/disable-2fa", {
-      code,
-    });
-
-    return response;
-  },
-
-  // Two-factor authentication doğrulama
-  verifyTwoFactor: async (code) => {
-    const response = await post("/auth/verify-2fa", {
-      code,
-    });
-
-    return response;
+  /**
+   * Aktif kullanıcıyı döndürür.
+   */
+  getCurrentUser: () => {
+    return auth().currentUser;
   },
 };
