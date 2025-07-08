@@ -1,15 +1,9 @@
-// src/config/firebase.js
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  initializeAuth,
-  getReactNativePersistence,
-} from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getFunctions } from "firebase/functions";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { initializeApp, getApps } from "@react-native-firebase/app";
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
+import functions from "@react-native-firebase/functions";
 
-// Firebase config - .env dosyasından alınıyor
+// Firebase config from .env
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY || "demo-api-key",
   authDomain:
@@ -17,29 +11,18 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID || "datagoesim-fa033",
   storageBucket:
     process.env.FIREBASE_STORAGE_BUCKET || "datagoesim-fa033.appspot.com",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "838330201778",
   appId: process.env.FIREBASE_APP_ID || "demo-app-id",
 };
 
-// Firebase'i initialize et
-const app = initializeApp(firebaseConfig);
-
-// Auth'u AsyncStorage persistence ile initialize et
-let auth;
-try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-  });
-} catch (error) {
-  // Eğer auth zaten initialize edilmişse, mevcut instance'ı kullan
-  auth = getAuth(app);
+// Initialize Firebase if not already initialized
+let app;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
 }
 
-// Firestore'u initialize et
-const firestore = getFirestore(app);
-
-// Functions'ı initialize et
-const functions = getFunctions(app);
-
+// Export Firebase services
 export { auth, firestore, functions };
 export default app;

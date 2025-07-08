@@ -1,148 +1,75 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
-  ActivityIndicator,
+  ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  RefreshControl,
-  TextInput,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useESIMStore } from "../../stores/esimStore";
-import { esimService } from "../../services/api/esimService";
 import { COLORS, FONTS, SIZES } from "../../constants/theme";
 
-/**
- * Yeniden kullanılabilir, şık ve bilgilendirici eSIM paket kartı bileşeni.
- */
-const PackageCard = React.memo(({ item, onPress }) => {
-  // Mock veriler için fallback değerler
-  const countryName = item.country || "Global";
-  const dataAmount = item.dataAmount
-    ? item.dataAmount > 1024
-      ? `${(item.dataAmount / 1024).toFixed(1)} GB`
-      : `${item.dataAmount} MB`
-    : "N/A";
-  const validityDays = item.duration || "N/A";
-  const price = item.price || 0;
-  const flag = item.countryFlag || "🌍";
+const StoreScreen = ({ navigation }) => {
+  console.log("🏪 StoreScreen rendering...");
 
-  return (
-    <TouchableOpacity style={styles.card} onPress={() => onPress(item)}>
+  const mockPackages = [
+    {
+      id: "1",
+      country: "Türkiye",
+      flag: "🇹🇷",
+      data: "5GB",
+      duration: "30 Gün",
+      price: "$29.99",
+    },
+    {
+      id: "2",
+      country: "Amerika",
+      flag: "🇺🇸",
+      data: "10GB",
+      duration: "30 Gün",
+      price: "$49.99",
+    },
+    {
+      id: "3",
+      country: "Almanya",
+      flag: "🇩🇪",
+      data: "3GB",
+      duration: "15 Gün",
+      price: "$19.99",
+    },
+  ];
+
+  const PackageCard = ({ item }) => (
+    <TouchableOpacity
+      style={styles.packageCard}
+      onPress={() => {
+        console.log("📦 Package selected:", item.country);
+        // navigation.navigate("PurchaseSummary", { packageDetails: item });
+      }}
+    >
       <View style={styles.cardHeader}>
-        <Text style={styles.flag}>{flag}</Text>
+        <Text style={styles.flag}>{item.flag}</Text>
         <View style={styles.countryInfo}>
-          <Text style={styles.countryText}>{countryName}</Text>
-          <Text style={styles.providerText}>{item.provider || "Global"}</Text>
+          <Text style={styles.countryName}>{item.country}</Text>
+          <Text style={styles.packageDetails}>
+            {item.data} • {item.duration}
+          </Text>
         </View>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceText}>${price.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardBody}>
-        <View style={styles.featureRow}>
-          <Ionicons name="wifi" size={16} color={COLORS.primary} />
-          <Text style={styles.featureText}>{dataAmount}</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Ionicons name="time" size={16} color={COLORS.primary} />
-          <Text style={styles.featureText}>{validityDays} Gün</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Ionicons name="flash" size={16} color={COLORS.primary} />
-          <Text style={styles.featureText}>{item.speed || "4G/5G"}</Text>
-        </View>
+        <Text style={styles.price}>{item.price}</Text>
       </View>
 
       <View style={styles.cardFooter}>
-        <View style={styles.buyButton}>
-          <Text style={styles.buyButtonText}>Satın Al</Text>
+        <View style={styles.features}>
+          <Text style={styles.featureText}>📶 4G/5G Hız</Text>
+          <Text style={styles.featureText}>🌐 Geniş Kapsama</Text>
         </View>
+
+        <TouchableOpacity style={styles.buyButton}>
+          <Text style={styles.buyButtonText}>Satın Al</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
-});
-
-const StoreScreen = ({ navigation }) => {
-  const [packages, setPackages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchText, setSearchText] = useState("");
-  const [filteredPackages, setFilteredPackages] = useState([]);
-
-  useEffect(() => {
-    fetchPackages();
-  }, []);
-
-  useEffect(() => {
-    // Arama filtresi
-    if (searchText.trim() === "") {
-      setFilteredPackages(packages);
-    } else {
-      const filtered = packages.filter(
-        (pkg) =>
-          pkg.country?.toLowerCase().includes(searchText.toLowerCase()) ||
-          pkg.name?.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setFilteredPackages(filtered);
-    }
-  }, [searchText, packages]);
-
-  const fetchPackages = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Mock veriler kullan (gerçek API entegrasyonu için esimService.getPackages() kullanın)
-      const response = esimService.getMockPackages();
-
-      if (response.success) {
-        setPackages(response.data);
-        setFilteredPackages(response.data);
-      } else {
-        setError("Paketler yüklenemedi");
-      }
-    } catch (err) {
-      console.error("Package fetch error:", err);
-      setError("Paketler yüklenirken hata oluştu");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRefresh = useCallback(() => {
-    fetchPackages();
-  }, []);
-
-  const handlePackageSelect = (selectedPackage) => {
-    navigation.navigate("PurchaseSummary", { packageDetails: selectedPackage });
-  };
-
-  if (isLoading && packages.length === 0) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Paketler Yükleniyor...</Text>
-      </View>
-    );
-  }
-
-  if (error && packages.length === 0) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Ionicons name="wifi-off" size={64} color={COLORS.textSecondary} />
-        <Text style={styles.errorText}>Bir Hata Oluştu</Text>
-        <Text style={styles.errorSubText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -151,53 +78,26 @@ const StoreScreen = ({ navigation }) => {
         <Text style={styles.headerSubtitle}>
           Dünyayı Keşfet, Bağlantıda Kal
         </Text>
-
-        {/* Arama çubuğu */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={COLORS.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Ülke ara..."
-            placeholderTextColor={COLORS.textSecondary}
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-        </View>
       </View>
 
-      <FlatList
-        data={filteredPackages}
-        renderItem={({ item }) => (
-          <PackageCard item={item} onPress={handlePackageSelect} />
-        )}
-        keyExtractor={(item) =>
-          item.id?.toString() || `package-${Math.random()}`
-        }
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
-          />
-        }
-        ListEmptyComponent={() => (
-          <View style={styles.center}>
-            <Ionicons
-              name="storefront-outline"
-              size={64}
-              color={COLORS.textSecondary}
-            />
-            <Text style={styles.emptyText}>
-              {searchText
-                ? "Arama sonucu bulunamadı"
-                : "Gösterilecek paket bulunamadı"}
-            </Text>
-          </View>
-        )}
-      />
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <Text style={styles.sectionTitle}>Popüler Paketler</Text>
+
+        {mockPackages.map((item) => (
+          <PackageCard key={item.id} item={item} />
+        ))}
+
+        <View style={styles.infoSection}>
+          <Text style={styles.infoTitle}>✨ Neden DataGo eSIM?</Text>
+          <Text style={styles.infoText}>
+            • Anında aktivasyon{"\n"}• 190+ ülke desteği{"\n"}• 24/7 müşteri
+            desteği{"\n"}• Fiziksel SIM kart gerektirmez
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -208,16 +108,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
 
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: SIZES.padding,
-  },
-
   header: {
-    paddingHorizontal: SIZES.padding,
-    paddingTop: SIZES.padding,
+    padding: SIZES.padding,
     paddingBottom: SIZES.padding / 2,
   },
 
@@ -231,31 +123,24 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     ...FONTS.body3,
     color: COLORS.textSecondary,
+  },
+
+  content: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    padding: SIZES.padding,
+  },
+
+  sectionTitle: {
+    ...FONTS.h2,
+    color: COLORS.text,
+    fontWeight: "600",
     marginBottom: SIZES.padding,
   },
 
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.radius,
-    paddingHorizontal: SIZES.padding / 1.5,
-    paddingVertical: SIZES.base,
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: SIZES.base,
-    ...FONTS.body3,
-    color: COLORS.text,
-  },
-
-  listContainer: {
-    paddingHorizontal: SIZES.padding,
-    paddingBottom: 20,
-  },
-
-  card: {
+  packageCard: {
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius * 1.5,
     padding: SIZES.padding,
@@ -282,56 +167,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  countryText: {
+  countryName: {
     ...FONTS.h3,
     color: COLORS.text,
     fontWeight: "600",
   },
 
-  providerText: {
+  packageDetails: {
     ...FONTS.body4,
     color: COLORS.textSecondary,
   },
 
-  priceContainer: {
-    alignItems: "flex-end",
-  },
-
-  priceText: {
+  price: {
     ...FONTS.h2,
     color: COLORS.primary,
     fontWeight: "700",
   },
 
-  cardBody: {
+  cardFooter: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: SIZES.padding,
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  features: {
+    flex: 1,
   },
 
   featureText: {
-    marginLeft: SIZES.base / 2,
     ...FONTS.body4,
-    color: COLORS.text,
-    fontWeight: "500",
-  },
-
-  cardFooter: {
-    alignItems: "center",
+    color: COLORS.textSecondary,
+    marginBottom: 2,
   },
 
   buyButton: {
     backgroundColor: COLORS.primary,
-    paddingVertical: SIZES.base * 1.5,
-    paddingHorizontal: SIZES.padding * 2,
+    paddingVertical: SIZES.base,
+    paddingHorizontal: SIZES.padding * 1.5,
     borderRadius: SIZES.radius * 2,
-    minWidth: 120,
-    alignItems: "center",
   },
 
   buyButtonText: {
@@ -340,43 +213,25 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  loadingText: {
-    ...FONTS.body3,
-    color: COLORS.textSecondary,
-    marginTop: SIZES.base * 2,
+  infoSection: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding,
+    marginTop: SIZES.padding,
   },
 
-  errorText: {
-    ...FONTS.h2,
-    color: COLORS.error,
-    textAlign: "center",
+  infoTitle: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    fontWeight: "600",
     marginBottom: SIZES.base,
   },
 
-  errorSubText: {
-    ...FONTS.body4,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    marginBottom: SIZES.padding,
-  },
-
-  retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: SIZES.base,
-    paddingHorizontal: SIZES.padding,
-    borderRadius: SIZES.radius,
-  },
-
-  retryButtonText: {
-    ...FONTS.h4,
-    color: COLORS.white,
-    fontWeight: "bold",
-  },
-
-  emptyText: {
+  infoText: {
     ...FONTS.body3,
     color: COLORS.textSecondary,
-    textAlign: "center",
-    marginTop: SIZES.padding,
+    lineHeight: 22,
   },
 });
+
+export default StoreScreen;

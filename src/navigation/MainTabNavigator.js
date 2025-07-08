@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../constants/theme";
 
-// Ekranlar
+// Basit Screen Bileşenleri
 import StoreScreen from "../screens/store/StoreScreen";
 import MyESIMsScreen from "../screens/esims/MyESIMsScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
@@ -11,6 +11,8 @@ import ProfileScreen from "../screens/profile/ProfileScreen";
 const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
+  console.log("🗂️ MainTabNavigator rendering...");
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

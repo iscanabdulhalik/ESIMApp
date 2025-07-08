@@ -1,68 +1,111 @@
-// src/stores/esimStore.js
 import { create } from "zustand";
-import { esimService } from "../services/esimService";
+
+// Mock data for development
+const mockPackages = [
+  {
+    id: "1",
+    country: { name: "Türkiye" },
+    data_amount: "5GB",
+    validity_days: 30,
+    price: { amount: 29.99 },
+    countryFlag: "🇹🇷",
+  },
+  {
+    id: "2",
+    country: { name: "Amerika" },
+    data_amount: "10GB",
+    validity_days: 30,
+    price: { amount: 49.99 },
+    countryFlag: "🇺🇸",
+  },
+];
+
+const mockESIM = {
+  id: "mock-esim-123",
+  iccid: "89014103211118510720",
+  order_id: "order-123",
+  smdp_address: "smdp.example.com",
+  matching_id: "activation_code_123",
+  qr_code_data: "LPA:1$smdp.example.com$activation_code_123",
+};
 
 export const useESIMStore = create((set, get) => ({
   // State
-  packages: [],
+  packages: mockPackages,
   myESIMs: [],
   selectedESIMDetails: null,
 
-  // Durum Yönetimi (State Management)
+  // Loading states
   isLoadingPackages: false,
   isLoadingOrder: false,
   isLoadingDetails: false,
-  error: null, // Genel bir hata state'i veya aksiyona özel (errorPackages, errorOrder vb.)
+  error: null,
 
-  // Actions
+  // Mock Actions
   fetchPackages: async () => {
     set({ isLoadingPackages: true, error: null });
-    try {
-      const data = await esimService.getPackages();
-      set({ packages: data.packages || data, isLoadingPackages: false });
-    } catch (err) {
-      set({ error: "Paketler yüklenemedi.", isLoadingPackages: false });
-    }
+
+    // Mock delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    set({
+      packages: mockPackages,
+      isLoadingPackages: false,
+    });
   },
 
   createOrder: async (packageId) => {
     set({ isLoadingOrder: true, error: null });
-    try {
-      const orderResponse = await esimService.createOrder(packageId);
-      // Sipariş başarılı, şimdi detayları çekelim.
-      const esimDetails = await esimService.getESIMDetailsByOrder(
-        orderResponse.id
-      );
 
-      // State'i güncelle
+    try {
+      // Mock delay
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Mock success
+      const newESIM = {
+        ...mockESIM,
+        id: "esim-" + Date.now(),
+        order_id: "order-" + Date.now(),
+        packageId,
+      };
+
       set((state) => ({
-        // Kullanıcının eSIM'leri listesine yeni olanı ekle
-        myESIMs: [...state.myESIMs, ...esimDetails],
+        myESIMs: [...state.myESIMs, newESIM],
         isLoadingOrder: false,
       }));
 
-      // UI'ın yönlendirme yapabilmesi için yeni eSIM detaylarını döndür
-      return esimDetails[0]; // Genellikle sipariş tek eSIM içerir
+      return newESIM;
     } catch (err) {
       set({
         error: "Sipariş oluşturulamadı. Lütfen tekrar deneyin.",
         isLoadingOrder: false,
       });
-      return null; // Başarısızlık durumunda null döndür
+      return null;
     }
   },
 
   fetchESIMDetails: async (orderId) => {
     set({ isLoadingDetails: true, error: null, selectedESIMDetails: null });
+
     try {
-      const esimDetails = await esimService.getESIMDetailsByOrder(orderId);
-      if (esimDetails && esimDetails.length > 0) {
-        set({ selectedESIMDetails: esimDetails[0], isLoadingDetails: false });
-      } else {
-        throw new Error("Bu siparişe ait eSIM bulunamadı.");
-      }
+      // Mock delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Mock eSIM details
+      const esimDetails = {
+        ...mockESIM,
+        order_id: orderId,
+      };
+
+      set({
+        selectedESIMDetails: esimDetails,
+        isLoadingDetails: false,
+      });
     } catch (err) {
-      set({ error: err.message, isLoadingDetails: false });
+      set({
+        error: "eSIM detayları yüklenemedi.",
+        isLoadingDetails: false,
+      });
     }
   },
 }));

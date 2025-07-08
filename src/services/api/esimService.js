@@ -1,125 +1,6 @@
-import { get, post, put, del } from "./apiClient";
-import { API_CONFIG } from "../../constants/api";
-
+// Mock eSIM Service for development without real API
 export const esimService = {
-  // Paketleri getir
-  getPackages: async (country = null, region = null, page = 1, limit = 20) => {
-    const params = {};
-    if (country) params.country = country;
-    if (region) params.region = region;
-    params.page = page;
-    params.limit = limit;
-
-    const response = await get(API_CONFIG.ENDPOINTS.PACKAGES, params);
-    return response;
-  },
-
-  // Paket detaylarını getir
-  getPackageDetails: async (packageId) => {
-    const response = await get(API_CONFIG.ENDPOINTS.PACKAGE_DETAILS(packageId));
-    return response;
-  },
-
-  // Sipariş oluştur
-  createOrder: async (packageId, quantity = 1) => {
-    const response = await post(API_CONFIG.ENDPOINTS.CREATE_ORDER, {
-      packageId,
-      quantity,
-    });
-    return response;
-  },
-
-  // Siparişleri getir
-  getOrders: async (status = null, page = 1, limit = 20) => {
-    const params = { page, limit };
-    if (status) params.status = status;
-
-    const response = await get(API_CONFIG.ENDPOINTS.ORDERS, params);
-    return response;
-  },
-
-  // Sipariş detaylarını getir
-  getOrderDetails: async (orderId) => {
-    const response = await get(API_CONFIG.ENDPOINTS.ORDER_DETAILS(orderId));
-    return response;
-  },
-
-  // Kullanıcının eSIM'lerini getir
-  getESIMs: async (status = null) => {
-    const params = {};
-    if (status) params.status = status;
-
-    const response = await get(API_CONFIG.ENDPOINTS.ESIMS, params);
-    return response;
-  },
-
-  // eSIM detaylarını getir
-  getESIMDetails: async (iccid) => {
-    const response = await get(API_CONFIG.ENDPOINTS.ESIM_DETAILS(iccid));
-    return response;
-  },
-
-  // eSIM kullanım verilerini getir
-  getESIMUsage: async (iccid, startDate = null, endDate = null) => {
-    const params = {};
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
-
-    const response = await get(API_CONFIG.ENDPOINTS.ESIM_USAGE(iccid), params);
-    return response;
-  },
-
-  // eSIM QR kodunu getir
-  getESIMQR: async (iccid) => {
-    const response = await get(API_CONFIG.ENDPOINTS.ESIM_QR(iccid));
-    return response;
-  },
-
-  // eSIM'i etkinleştir
-  activateESIM: async (iccid) => {
-    const response = await post(
-      `${API_CONFIG.ENDPOINTS.ESIM_DETAILS(iccid)}/activate`
-    );
-    return response;
-  },
-
-  // eSIM'i devre dışı bırak
-  deactivateESIM: async (iccid) => {
-    const response = await post(
-      `${API_CONFIG.ENDPOINTS.ESIM_DETAILS(iccid)}/deactivate`
-    );
-    return response;
-  },
-
-  // eSIM'i yeniden adlandır
-  renameESIM: async (iccid, newName) => {
-    const response = await put(API_CONFIG.ENDPOINTS.ESIM_DETAILS(iccid), {
-      name: newName,
-    });
-    return response;
-  },
-
-  // eSIM durumunu güncelle
-  updateESIMStatus: async (iccid, status) => {
-    const response = await put(API_CONFIG.ENDPOINTS.ESIM_DETAILS(iccid), {
-      status,
-    });
-    return response;
-  },
-
-  // eSIM'i sil
-  deleteESIM: async (iccid) => {
-    const response = await del(API_CONFIG.ENDPOINTS.ESIM_DETAILS(iccid));
-    return response;
-  },
-
-  // Ülkeleri getir
-  getCountries: async () => {
-    const response = await get(API_CONFIG.ENDPOINTS.COUNTRIES);
-    return response;
-  },
-
-  // Mock veriler (geliştirme için)
+  // Mock packages
   getMockPackages: () => {
     return {
       success: true,
@@ -172,11 +53,43 @@ export const esimService = {
           smsIncluded: true,
           provider: "Verizon",
         },
+        {
+          id: "4",
+          country: "İngiltere",
+          countryCode: "GB",
+          countryFlag: "🇬🇧",
+          name: "İngiltere 15 Gün",
+          dataAmount: 2048,
+          duration: 15,
+          price: 24.99,
+          currency: "USD",
+          coverage: "İngiltere Geneli",
+          speed: "4G/5G",
+          hotspotAllowed: true,
+          smsIncluded: false,
+          provider: "EE",
+        },
+        {
+          id: "5",
+          country: "Fransa",
+          countryCode: "FR",
+          countryFlag: "🇫🇷",
+          name: "Fransa 30 Gün",
+          dataAmount: 6144,
+          duration: 30,
+          price: 34.99,
+          currency: "USD",
+          coverage: "Fransa Geneli",
+          speed: "4G/5G",
+          hotspotAllowed: true,
+          smsIncluded: false,
+          provider: "Orange",
+        }
       ],
     };
   },
 
-  // Mock eSIM'ler (geliştirme için)
+  // Mock eSIMs
   getMockESIMs: () => {
     return {
       success: true,
@@ -209,10 +122,44 @@ export const esimService = {
     };
   },
 
-  // Mock sipariş oluşturma
-  createMockOrder: async (packageId) => {
-    // Simülasyon için delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Mock API calls
+  getPackages: async () => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return esimService.getMockPackages();
+  },
+
+  getPackageDetails: async (packageId) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const packages = esimService.getMockPackages().data;
+    const packageDetails = packages.find(p => p.id === packageId);
+    
+    if (packageDetails) {
+      return { success: true, data: packageDetails };
+    } else {
+      return { success: false, error: "Paket bulunamadı" };
+    }
+  },
+
+  getESIMs: async (status = null) => {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    let esims = esimService.getMockESIMs().data;
+    
+    if (status) {
+      esims = esims.filter(esim => esim.status === status);
+    }
+    
+    return { success: true, data: esims };
+  },
+
+  createOrder: async (packageId) => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const packages = esimService.getMockPackages().data;
+    const packageDetails = packages.find(p => p.id === packageId);
+    
+    if (!packageDetails) {
+      return { success: false, error: "Paket bulunamadı" };
+    }
 
     const mockESIM = {
       iccid: "89014103211118510" + Math.floor(Math.random() * 1000),
@@ -222,11 +169,20 @@ export const esimService = {
       smdpAddress: "smdp.example.com",
       activationCode: "activation_code_123",
       packageId,
+      country: packageDetails.country,
+      countryFlag: packageDetails.countryFlag,
+      packageName: packageDetails.name,
+      provider: packageDetails.provider,
+      dataLimit: packageDetails.dataAmount,
+      dataUsed: 0,
+      expiryDate: new Date(Date.now() + packageDetails.duration * 24 * 60 * 60 * 1000),
+      purchaseDate: new Date(),
     };
 
-    return {
-      success: true,
-      data: mockESIM,
-    };
-  },
+    return { success: true, data: mockESIM };
+  }
 };
+
+// Compatibility exports
+export const getMockPackages = esimService.getMockPackages;
+export const getMockESIMs = esimService.getMockESIMs;

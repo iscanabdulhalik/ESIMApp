@@ -2,28 +2,17 @@ const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
 
-// Performance optimizations
-config.resolver.platforms = ["ios", "android", "native", "web"];
-
-// Cache configuration
-config.cacheStores = [
-  {
-    name: "filesystem",
-    type: "FileStore",
-  },
-];
+// Cache'i tamamen devre dışı bırak
+config.cacheStores = [];
 
 // Transformer optimizations
 config.transformer.enableBabelRuntime = false;
 config.transformer.enableBabelRCLookup = false;
 
 // Resolver optimizations
-config.resolver.alias = {
-  ...config.resolver.alias,
-  // Add any custom aliases here
-};
+config.resolver.platforms = ["ios", "android", "native", "web"];
 
-// Watchman configuration
+// Watchman configuration - daha stabil
 config.watchFolders = [__dirname];
 
 // Exclude unnecessary files from watching
@@ -32,14 +21,9 @@ config.resolver.blockList = [
 ];
 
 // Asset extensions
-config.resolver.assetExts.push(
-  // Add any custom asset extensions
-  "db",
-  "mp3",
-  "ttf",
-  "obj",
-  "png",
-  "jpg"
-);
+config.resolver.assetExts.push("db", "mp3", "ttf", "obj", "png", "jpg");
+
+// Cache'i komple kapat
+config.resetCache = true;
 
 module.exports = config;
