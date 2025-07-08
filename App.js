@@ -12,8 +12,10 @@ import { COLORS } from "./src/constants/theme";
 // --- Ana Navigatörler ve Ekranlar ---
 import MainTabNavigator from "./src/navigation/MainTabNavigator";
 import LoginScreen from "./src/screens/auth/LoginScreen";
-import RegisterScreen from "./src/screens/auth/RegisterScreen"; // Register ekranını da ekleyelim
+import RegisterScreen from "./src/screens/auth/RegisterScreen";
+import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
 import PurchaseSummaryScreen from "./src/screens/purchase/PurchaseSummaryScreen";
+import PurchaseScreen from "./src/screens/store/PurchaseScreen";
 import ESIMDetailsScreen from "./src/screens/esims/ESIMDetailsScreen";
 
 const Stack = createStackNavigator();
@@ -34,6 +36,7 @@ const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
   </Stack.Navigator>
 );
 
@@ -54,6 +57,7 @@ const AppStack = () => (
     {/* Tam ekran modal olarak açılacak detay ekranları */}
     <Stack.Group screenOptions={{ presentation: "modal" }}>
       <Stack.Screen name="PurchaseSummary" component={PurchaseSummaryScreen} />
+      <Stack.Screen name="Purchase" component={PurchaseScreen} />
       <Stack.Screen name="ESIMDetails" component={ESIMDetailsScreen} />
     </Stack.Group>
   </Stack.Navigator>
@@ -70,7 +74,7 @@ const App = () => {
 
     // Component kaldırıldığında (uygulama kapandığında) dinleyiciyi temizliyoruz.
     return () => unsubscribe();
-  }, [setupAuthListener]); // Bağımlılık listesi boş, sadece bir kere çalışır.
+  }, [setupAuthListener]);
 
   // Firebase ilk auth durumunu kontrol ederken yüklenme ekranı göster.
   if (isLoading) {
